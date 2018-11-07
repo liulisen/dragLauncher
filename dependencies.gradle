@@ -1,0 +1,24 @@
+ext {
+    COMPILE_SDK_VERSION = 27
+
+
+    BUILD_TOOLS_VERSION = '25.0.1'
+	SUPPORT_LIBRARY_VERSION = '25.0.1'
+
+    MIN_SDK_VERSION     = 14
+    TARGET_SDK_VERSION  = 25
+
+    libs = [
+            APPCOMPAT_V7        : "com.android.support:appcompat-v7:$SUPPORT_LIBRARY_VERSION",
+            RECYCLER_VIEW       : "com.android.support:recyclerview-v7:$SUPPORT_LIBRARY_VERSION",
+            CARD_VIEW           : "com.android.support:cardview-v7:$SUPPORT_LIBRARY_VERSION",
+            GRID_LAYOUT         : "com.android.support:gridlayout-v7:$SUPPORT_LIBRARY_VERSION",
+            SUPPORT_DESIGN      : "com.android.support:design:$SUPPORT_LIBRARY_VERSION",
+            SUPPORT_V4          : "com.android.support:support-v4:$SUPPORT_LIBRARY_VERSION",
+            SUPPORT_ANNOTATIONS : "com.android.support:support-annotations:$SUPPORT_LIBRARY_VERSION",
+            SUPPORT_PALETTE     : "com.android.support:palette-v7:$SUPPORT_LIBRARY_VERSION",
+            SUPPORT_PERCENT     : "com.android.support:percent:$SUPPORT_LIBRARY_VERSION",
+            CONSTRAINT_LAYOUT   : "com.android.support.constraint:constraint-layout:1.0.2",
+            MULTI_DEX           : "com.android.support:multidex:1.0.1",
+    ]
+}

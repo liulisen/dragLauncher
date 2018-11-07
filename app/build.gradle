@@ -1,0 +1,41 @@
+apply plugin: 'com.android.application'
+
+android {
+
+    compileSdkVersion = rootProject.ext.COMPILE_SDK_VERSION
+    buildToolsVersion = rootProject.ext.BUILD_TOOLS_VERSION
+    defaultConfig {
+        applicationId "com.demo.dragview"
+        minSdkVersion rootProject.ext.MIN_SDK_VERSION
+        targetSdkVersion rootProject.ext.TARGET_SDK_VERSION
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    dataBinding {
+        enabled = true
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    testCompile 'junit:junit:4.12'
+
+    compile rootProject.ext.libs.MULTI_DEX
+
+    compile rootProject.ext.libs.APPCOMPAT_V7
+    compile rootProject.ext.libs.RECYCLER_VIEW
+    compile rootProject.ext.libs.SUPPORT_DESIGN
+}
