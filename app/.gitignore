@@ -1,1 +1,6 @@
+*.iml
+
 /build
+app/*.iml
+/app/*.iml
+app/app.iml

@@ -33,9 +33,8 @@ dependencies {
     })
     testCompile 'junit:junit:4.12'
 
-    compile rootProject.ext.libs.MULTI_DEX
-
-    compile rootProject.ext.libs.APPCOMPAT_V7
-    compile rootProject.ext.libs.RECYCLER_VIEW
-    compile rootProject.ext.libs.SUPPORT_DESIGN
+    implementation MUTIDEX_V
+    implementation "com.android.support:design:${rootProject.ext.supportVersion}"
+    implementation "com.android.support:appcompat-v7:${rootProject.ext.supportVersion}"
+    implementation "com.android.support:recyclerview-v7:${rootProject.ext.supportVersion}"
 }
