@@ -5,6 +5,7 @@ import android.content.Context;
 import android.databinding.DataBindingUtil;
 import android.graphics.RectF;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -26,7 +27,7 @@ import java.util.List;
  */
 
 public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCallback<DataBean> {
-
+    private static Handler handler = new Handler();
     private MyFragmentLayoutBinding mBinding;
 
     private DragLayerLayout<DataBean> mDragLayerLayout;
@@ -87,7 +88,13 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
                 //mGridLayoutManager.scrollToPositionWithOffset(mData.size() - 1, 0);
                 mBinding.recyclerView.smoothScrollToPosition(mData.size() - 1);
             }
-            notifyDataSetChanged();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    notifyDataSetChanged();
+                }
+            }, 800);
+
         }
 
         private void removeItem(DataBean item) {
@@ -96,24 +103,49 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
                 mData.remove(index);
                 notifyItemRemoved(index);
             }
-            notifyDataSetChanged();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    notifyDataSetChanged();
+                }
+            }, 800);
+
         }
 
-        private void swipItem(int fromPosition, RectF rectF) {
+        private void swipItem(int from, RectF rectF) {
             View view = mBinding.recyclerView.findChildViewUnder(rectF.centerX(), rectF.centerY());
             if (view != null) {
                 RecyclerView.ViewHolder viewHolder = mBinding.recyclerView.findContainingViewHolder(view);
-                int position = viewHolder.getLayoutPosition();
-                Collections.swap(mData, fromPosition, position);
-                notifyItemMoved(fromPosition, position);
+                int to = viewHolder.getLayoutPosition();
+                synchronized (this) {
+                    if (from > to) {
+                        int count = from - to;
+                        for (int i = 0; i < count; i++) {
+                            Collections.swap(mData, from - i, from - i - 1);
+                        }
+                    }
+                    if (from < to) {
+                        int count = to - from;
+                        for (int i = 0; i < count; i++) {
+                            Collections.swap(mData, from + i, from + i + 1);
+                        }
+                    }
+                    mAdapter.notifyItemMoved(from, to);
+
+                }
             } else {
-                Collections.swap(mData, fromPosition, mData.size() - 1);
-                notifyItemMoved(fromPosition, mData.size() - 1);
+                Collections.swap(mData, from, mData.size() - 1);
+                notifyItemMoved(from, mData.size() - 1);
                 //mGridLayoutManager.scrollToPositionWithOffset(mData.size() - 1, 0);
                 mBinding.recyclerView.smoothScrollToPosition(mData.size() - 1);
             }
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    notifyDataSetChanged();
+                }
+            }, 800);
 
-            notifyDataSetChanged();
         }
 
         public RecyclerViewAdapter(Context context, List<DataBean> data) {
