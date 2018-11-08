@@ -20,6 +20,7 @@ public class MyViewPagerAdapter extends FragmentStatePagerAdapter implements Dra
     }
 
     private SparseArray<Fragment> mFragments = new SparseArray<>();
+    private View originView;
 
     @Override
     public Fragment getItem(int position) {
@@ -46,6 +47,7 @@ public class MyViewPagerAdapter extends FragmentStatePagerAdapter implements Dra
     @Override
     public void onStartDrag(View dragView, int dragPage, int dragPosition, DataBean data) {
         dragView.setVisibility(View.GONE);
+        this.originView = dragView;
     }
 
     @Override
@@ -62,8 +64,8 @@ public class MyViewPagerAdapter extends FragmentStatePagerAdapter implements Dra
             if (dragPage != dropPage) {
                 ((DragLayerLayout.IDragDataCallback) dragFragment).removeItem(data);
                 ((DragLayerLayout.IDragDataCallback) dropFragment).addItem(data, rectF);
-            }else {
-                ((DragLayerLayout.IDragDataCallback) dragFragment).swipItem(dragPosition,rectF);
+            } else {
+                ((DragLayerLayout.IDragDataCallback) dragFragment).swipItem(dragPosition, rectF);
             }
         }
         if (dragPage == dropPage) {
@@ -71,5 +73,18 @@ public class MyViewPagerAdapter extends FragmentStatePagerAdapter implements Dra
         }
     }
 
-    // ----- END DragLayerLayout.IDragActionCallback<String> -----
+    @Override
+    public void onMove(View dragView, int dragPage, int dragPosition, int dropPage, DataBean data, RectF rectF) {
+        if (dragPage == dropPage) {
+            Fragment dragFragment = mFragments.get(dragPage);
+            Fragment dropFragment = mFragments.get(dropPage);
+            if (dragFragment != null && dragFragment instanceof DragLayerLayout.IDragDataCallback
+                    && dropFragment != null && dropFragment instanceof DragLayerLayout.IDragDataCallback) {
+                ((DragLayerLayout.IDragDataCallback) dragFragment).onMove(originView, dragPosition, rectF);
+            }
+        }
+    }
+
+
+// ----- END DragLayerLayout.IDragActionCallback<String> -----
 }

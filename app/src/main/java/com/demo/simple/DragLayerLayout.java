@@ -12,7 +12,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewParent;
@@ -41,6 +43,8 @@ public class DragLayerLayout<T> extends FrameLayout {
         void onSlide2Page(View dragView, int dragPage, int dragPosition, int currentPage, T data);
 
         void onDrop(View dragView, int dragPage, int dragPosition, int dropPage, T data, RectF rectF);
+
+        void onMove(View dragView, int dragPage, int dragPosition, int dropPage, T data, RectF rectF);
     }
 
     public interface IDragDataCallback<T> {
@@ -48,7 +52,9 @@ public class DragLayerLayout<T> extends FrameLayout {
 
         void removeItem(T data);
 
-        void swipItem(int fromPosition,RectF toRectF);
+        void swipItem(int fromPosition, RectF toRectF);
+
+        void onMove(View originView, int fromPosition, RectF toRectF);
     }
 
     private IDragActionCallback<T> mDragCallback;
@@ -62,6 +68,7 @@ public class DragLayerLayout<T> extends FrameLayout {
     private Bitmap mDragSnapShot;
     private View mDragView;
     private ViewPager mViewPager;
+    private RecyclerView mRecyclerView;
     private T mData;
     private int mStartPosition;
     private float mTopOffset;
@@ -86,6 +93,10 @@ public class DragLayerLayout<T> extends FrameLayout {
                 offsetY += ((View) vp).getY();
             } else if (mViewPager == null) {
                 mViewPager = (ViewPager) vp.getParent();
+            }
+
+            if (vp instanceof RecyclerView) {
+                mRecyclerView = (RecyclerView) vp;
             }
             vp = vp.getParent();
         }
@@ -117,6 +128,16 @@ public class DragLayerLayout<T> extends FrameLayout {
         postInvalidate();
     }
 
+    private void onMove() {
+        if (mDragCallback != null && mViewPager != null) {
+            PagerAdapter adapter = mViewPager.getAdapter();
+            if (adapter != null) {
+                int index = mViewPager.getCurrentItem();
+                mRect.offset(0, -mTopOffset);
+                mDragCallback.onMove(mDragView, mStartDragPageIndex, mStartPosition, index, mData, mRect);
+            }
+        }
+    }
 
     private void onDrop() {
         if (mDragCallback != null && mViewPager != null) {
@@ -150,6 +171,7 @@ public class DragLayerLayout<T> extends FrameLayout {
             case MotionEvent.ACTION_MOVE: {
                 float x = event.getX();
                 float y = event.getY();
+                checkSlideY(x, y);
                 checkSlide(x, y);
                 if (mDragState == DRAG_STATE_START) {
                     mDragState = DRAG_STATE_DRAG;
@@ -158,6 +180,11 @@ public class DragLayerLayout<T> extends FrameLayout {
                     float dy = y - mLastPoint.y;
                     mRect.offset(dx, dy);
                     postInvalidate();
+//                    Log.e("onTouchEvent", "x=" + x + "          dx=" + dx);
+                    Log.e("onTouchEvent", "y=" + y);
+//                    if (Math.abs(dx) > 10 || Math.abs(dy) >= 10) {
+//                        onMove();
+//                    }
                 }
                 mLastPoint.set(x, y);
                 break;
@@ -190,19 +217,38 @@ public class DragLayerLayout<T> extends FrameLayout {
 
     private static final int SLIDE_EDGE = 200;
     private static final int SLIDE_CRITICAL = 80;
+
+//    private static final int SLIDE_Y_IDLE = 0;
+//    private static final int SLIDE_CAN_TOP = 1;
+//    private static final int SLIDE_CAN_DOWN = 2;
+//    private static final int SLIDE_WAIT_TO_AUTO_SLIDE_TOP = 3;
+//    private static final int SLIDE_WAIT_TO_AUTO_SLIDE_DOWN = 4;
+
+
     private static final int SLIDE_IDLE = 0;
     private static final int SLIDE_CAN_LEFT = 1;
     private static final int SLIDE_CAN_RIGHT = 2;
     private static final int SLIDE_WAIT_TO_AUTO_SLIDE_LEFT = 3;
     private static final int SLIDE_WAIT_TO_AUTO_SLIDE_RIGHT = 4;
+    private static final int SLIDE_WAIT_TO_AUTO_SLIDE_TOP = 5;
+    private static final int SLIDE_WAIT_TO_AUTO_SLIDE_DOWN = 6;
+
     private int mSlideState = SLIDE_IDLE;
     private float mSlideX;
     private float mCurrentX = SLIDE_EDGE + SLIDE_CRITICAL;
+
+    private int mSlideStateY = SLIDE_IDLE;
+    private float mSlideY;
+    private float mCurrentY = SLIDE_EDGE + SLIDE_CRITICAL;
 
     private void resetSlideState() {
         mSlideState = SLIDE_IDLE;
         mCurrentX = SLIDE_EDGE + SLIDE_CRITICAL;
         mAutoSlideHandler.removeMessages(0);
+
+        mSlideStateY = SLIDE_IDLE;
+        mCurrentY = SLIDE_EDGE + SLIDE_CRITICAL;
+        mAutoSlideHandler.removeMessages(1);
     }
 
     @SuppressLint("HandlerLeak")
@@ -222,9 +268,55 @@ public class DragLayerLayout<T> extends FrameLayout {
                     }
                     break;
                 }
+                case SLIDE_WAIT_TO_AUTO_SLIDE_TOP:
+                    if (mSlideY - mCurrentY >= SLIDE_CRITICAL) {
+                        slide2PageY(false);
+                    }
+                    break;
+                case SLIDE_WAIT_TO_AUTO_SLIDE_DOWN:
+                    if (mCurrentY - mSlideY >= SLIDE_CRITICAL) {
+                        slide2PageY(true);
+                    }
+                    break;
             }
         }
     };
+
+    private void checkSlideY(float x, float y) {
+        mCurrentY = y;
+        float height = getHeight() - 500;
+        Log.e("onTouchEvent", " checkSlideY   y=" + y + "   mSlideStateY=" + mSlideStateY + "   height=" + height);
+        if (mSlideStateY == SLIDE_IDLE) {
+            if (y <= SLIDE_EDGE) {
+                mSlideStateY = SLIDE_CAN_LEFT;
+            } else if (y >= height) {
+                mSlideStateY = SLIDE_CAN_RIGHT;
+            }
+            mSlideY = y;
+        } else {
+            if (y > SLIDE_EDGE && y < getHeight() - SLIDE_EDGE) {
+                resetSlideState();
+            } else {
+                switch (mSlideStateY) {
+                    case SLIDE_CAN_LEFT: {
+                        if (mSlideY - y >= SLIDE_CRITICAL) {
+                            mSlideStateY = SLIDE_WAIT_TO_AUTO_SLIDE_TOP;
+                            slide2PageY(false);
+                        }
+                        break;
+                    }
+                    case SLIDE_CAN_RIGHT: {
+                        if (y - mSlideY >= SLIDE_CRITICAL) {
+                            mSlideStateY = SLIDE_WAIT_TO_AUTO_SLIDE_DOWN;
+                            slide2PageY(true);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
 
     private void checkSlide(float x, float y) {
         mCurrentX = x;
@@ -277,6 +369,18 @@ public class DragLayerLayout<T> extends FrameLayout {
                     }
                 }
             }
+        }
+    }
+
+    private void slide2PageY(boolean next) {
+        if (mRecyclerView != null) {
+            int count = mRecyclerView.getAdapter().getItemCount();
+            if (next) {
+                mRecyclerView.smoothScrollToPosition(count);
+            } else {
+                mRecyclerView.smoothScrollToPosition(0);
+            }
+            mAutoSlideHandler.sendEmptyMessageDelayed(1, 800);
         }
     }
 }

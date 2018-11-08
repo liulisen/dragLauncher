@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -112,6 +113,14 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
 
         }
 
+        /**
+         * 手指滑动没有放下的交换效果
+         */
+        private void flipItem() {
+
+        }
+
+
         private void swipItem(int from, RectF rectF) {
             View view = mBinding.recyclerView.findChildViewUnder(rectF.centerX(), rectF.centerY());
             if (view != null) {
@@ -147,6 +156,42 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
             }, 800);
 
         }
+
+        private void onMove(View originView, int from, RectF rectF) {
+            float x = rectF.centerX();
+            float y = rectF.centerY();
+            Log.e("onTouchEvent", "x===============" + x + "                y=========" + y);
+            View view = mBinding.recyclerView.findChildViewUnder(x, y);
+            if (view != null && view != originView) {
+                RecyclerView.ViewHolder viewHolder = mBinding.recyclerView.findContainingViewHolder(view);
+                int to = viewHolder.getLayoutPosition();
+                if (from == to) {
+                    return;
+                }
+                synchronized (this) {
+                    if (from > to) {
+                        int count = from - to;
+                        for (int i = 0; i < count; i++) {
+                            Collections.swap(mData, from - i, from - i - 1);
+                        }
+                    }
+                    if (from < to) {
+                        int count = to - from;
+                        for (int i = 0; i < count; i++) {
+                            Collections.swap(mData, from + i, from + i + 1);
+                        }
+                    }
+                    mAdapter.notifyItemMoved(from, to);
+
+                }
+            } else {
+                Collections.swap(mData, from, mData.size() - 1);
+                notifyItemMoved(from, mData.size() - 1);
+                //mGridLayoutManager.scrollToPositionWithOffset(mData.size() - 1, 0);
+                mBinding.recyclerView.smoothScrollToPosition(mData.size() - 1);
+            }
+        }
+
 
         public RecyclerViewAdapter(Context context, List<DataBean> data) {
             mContext = context;
@@ -210,5 +255,10 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
     @Override
     public void swipItem(int fromPosition, RectF toRectF) {
         mAdapter.swipItem(fromPosition, toRectF);
+    }
+
+    @Override
+    public void onMove(View originView, int fromPosition, RectF toRectF) {
+        mAdapter.onMove(originView, fromPosition, toRectF);
     }
 }
