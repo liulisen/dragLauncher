@@ -120,12 +120,14 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
 
         }
 
+        int to;
 
         private void swipItem(int from, RectF rectF) {
             View view = mBinding.recyclerView.findChildViewUnder(rectF.centerX(), rectF.centerY());
+
             if (view != null) {
                 RecyclerView.ViewHolder viewHolder = mBinding.recyclerView.findContainingViewHolder(view);
-                int to = viewHolder.getLayoutPosition();
+                to = viewHolder.getLayoutPosition();
                 synchronized (this) {
                     if (from > to) {
                         int count = from - to;
@@ -140,11 +142,11 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
                         }
                     }
                     mAdapter.notifyItemMoved(from, to);
-
                 }
             } else {
-                Collections.swap(mData, from, mData.size() - 1);
-                notifyItemMoved(from, mData.size() - 1);
+                to = mData.size() - 1;
+                Collections.swap(mData, from, to);
+                notifyItemMoved(from, to);
                 //mGridLayoutManager.scrollToPositionWithOffset(mData.size() - 1, 0);
                 mBinding.recyclerView.smoothScrollToPosition(mData.size() - 1);
             }
@@ -152,6 +154,7 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
                 @Override
                 public void run() {
                     notifyDataSetChanged();
+                    mBinding.recyclerView.smoothScrollToPosition(to);
                 }
             }, 800);
 
