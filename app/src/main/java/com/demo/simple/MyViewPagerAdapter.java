@@ -1,5 +1,6 @@
 package com.demo.simple;
 
+import android.graphics.RectF;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -53,14 +54,20 @@ public class MyViewPagerAdapter extends FragmentStatePagerAdapter implements Dra
     }
 
     @Override
-    public void onDrop(View dragView, int dragPage, int dragPosition, int dropPage, DataBean data) {
-        dragView.setVisibility(View.VISIBLE);
+    public void onDrop(View dragView, int dragPage, int dragPosition, int dropPage, DataBean data, RectF rectF) {
         Fragment dragFragment = mFragments.get(dragPage);
         Fragment dropFragment = mFragments.get(dropPage);
         if (dragFragment != null && dragFragment instanceof DragLayerLayout.IDragDataCallback
                 && dropFragment != null && dropFragment instanceof DragLayerLayout.IDragDataCallback) {
-            ((DragLayerLayout.IDragDataCallback) dragFragment).removeItem(data);
-            ((DragLayerLayout.IDragDataCallback) dropFragment).addItem(data);
+            if (dragPage != dropPage) {
+                ((DragLayerLayout.IDragDataCallback) dragFragment).removeItem(data);
+                ((DragLayerLayout.IDragDataCallback) dropFragment).addItem(data, rectF);
+            }else {
+                ((DragLayerLayout.IDragDataCallback) dragFragment).swipItem(dragPosition,rectF);
+            }
+        }
+        if (dragPage == dropPage) {
+            dragView.setVisibility(View.VISIBLE);
         }
     }
 

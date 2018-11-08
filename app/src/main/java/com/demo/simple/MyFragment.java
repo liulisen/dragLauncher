@@ -3,6 +3,7 @@ package com.demo.simple;
 import android.app.Activity;
 import android.content.Context;
 import android.databinding.DataBindingUtil;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -17,6 +18,7 @@ import com.demo.simple.databinding.ItemLayoutBinding;
 import com.demo.simple.databinding.MyFragmentLayoutBinding;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -72,11 +74,20 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
         private Context mContext;
         private List<DataBean> mData;
 
-        private void addItem(DataBean item) {
-            mData.add(item);
-            notifyItemInserted(mData.size() - 1);
-            //mGridLayoutManager.scrollToPositionWithOffset(mData.size() - 1, 0);
-            mBinding.recyclerView.smoothScrollToPosition(mData.size() - 1);
+        private void addItem(DataBean item, RectF rectF) {
+            View view = mBinding.recyclerView.findChildViewUnder(rectF.centerX(), rectF.centerY());
+            if (view != null) {
+                RecyclerView.ViewHolder viewHolder = mBinding.recyclerView.findContainingViewHolder(view);
+                int position = viewHolder.getLayoutPosition();
+                mData.add(position, item);
+                notifyItemInserted(position);
+            } else {
+                mData.add(item);
+                notifyItemInserted(mData.size() - 1);
+                //mGridLayoutManager.scrollToPositionWithOffset(mData.size() - 1, 0);
+                mBinding.recyclerView.smoothScrollToPosition(mData.size() - 1);
+            }
+            notifyDataSetChanged();
         }
 
         private void removeItem(DataBean item) {
@@ -85,6 +96,24 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
                 mData.remove(index);
                 notifyItemRemoved(index);
             }
+            notifyDataSetChanged();
+        }
+
+        private void swipItem(int fromPosition, RectF rectF) {
+            View view = mBinding.recyclerView.findChildViewUnder(rectF.centerX(), rectF.centerY());
+            if (view != null) {
+                RecyclerView.ViewHolder viewHolder = mBinding.recyclerView.findContainingViewHolder(view);
+                int position = viewHolder.getLayoutPosition();
+                Collections.swap(mData, fromPosition, position);
+                notifyItemMoved(fromPosition, position);
+            } else {
+                Collections.swap(mData, fromPosition, mData.size() - 1);
+                notifyItemMoved(fromPosition, mData.size() - 1);
+                //mGridLayoutManager.scrollToPositionWithOffset(mData.size() - 1, 0);
+                mBinding.recyclerView.smoothScrollToPosition(mData.size() - 1);
+            }
+
+            notifyDataSetChanged();
         }
 
         public RecyclerViewAdapter(Context context, List<DataBean> data) {
@@ -137,12 +166,17 @@ public class MyFragment extends Fragment implements DragLayerLayout.IDragDataCal
     }
 
     @Override
-    public void addItem(DataBean data) {
-        mAdapter.addItem(data);
+    public void addItem(DataBean data, RectF rectF) {
+        mAdapter.addItem(data, rectF);
     }
 
     @Override
     public void removeItem(DataBean data) {
         mAdapter.removeItem(data);
+    }
+
+    @Override
+    public void swipItem(int fromPosition, RectF toRectF) {
+        mAdapter.swipItem(fromPosition, toRectF);
     }
 }

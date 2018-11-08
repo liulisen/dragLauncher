@@ -4,3 +4,4 @@
 app/*.iml
 /app/*.iml
 app/app.iml
+*.DS_Store

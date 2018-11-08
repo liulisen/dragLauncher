@@ -40,13 +40,15 @@ public class DragLayerLayout<T> extends FrameLayout {
 
         void onSlide2Page(View dragView, int dragPage, int dragPosition, int currentPage, T data);
 
-        void onDrop(View dragView, int dragPage, int dragPosition, int dropPage, T data);
+        void onDrop(View dragView, int dragPage, int dragPosition, int dropPage, T data, RectF rectF);
     }
 
     public interface IDragDataCallback<T> {
-        void addItem(T data);
+        void addItem(T data, RectF rectF);
 
         void removeItem(T data);
+
+        void swipItem(int fromPosition,RectF toRectF);
     }
 
     private IDragActionCallback<T> mDragCallback;
@@ -62,6 +64,7 @@ public class DragLayerLayout<T> extends FrameLayout {
     private ViewPager mViewPager;
     private T mData;
     private int mStartPosition;
+    private float mTopOffset;
 
     public void setDragCallback(IDragActionCallback<T> dragCallback) {
         mDragCallback = dragCallback;
@@ -90,6 +93,7 @@ public class DragLayerLayout<T> extends FrameLayout {
         if (mViewPager == null) {
             return;
         }
+        mTopOffset = offsetY;
 
         if (mDragSnapShot != null) {
             mDragSnapShot.recycle();
@@ -119,9 +123,16 @@ public class DragLayerLayout<T> extends FrameLayout {
             PagerAdapter adapter = mViewPager.getAdapter();
             if (adapter != null) {
                 int index = mViewPager.getCurrentItem();
-                mDragCallback.onDrop(mDragView, mStartDragPageIndex, mStartPosition, index, mData);
+                mRect.offset(0, -mTopOffset);
+                mDragCallback.onDrop(mDragView, mStartDragPageIndex, mStartPosition, index, mData, mRect);
             }
         }
+        recylce();
+    }
+
+    public void recylce() {
+        mData = null;
+        mDragView = null;
     }
 
     @Override
